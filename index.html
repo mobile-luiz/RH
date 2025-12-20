@@ -7,6 +7,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.min.js"></script>
 
   <style>
     :root { --primary: #2563eb; --sidebar-bg: #111827; --bg: #f3f4f6; --card: #ffffff; --text: #111827; --border: #e5e7eb; --success: #16a34a; --danger: #dc2626; --warning: #f59e0b; }
@@ -68,6 +71,9 @@
     <div class="menu-group">OPERACIONAL</div>
     <div class="nav-item active" onclick="switchTab('cadastro', this)"><i class="fas fa-user-plus"></i> Cadastro Base</div>
     <div class="nav-item" onclick="switchTab('ocorrencia', this)"><i class="fas fa-exclamation-circle"></i> Lançar Ocorrência</div>
+    <div class="nav-item" onclick="switchTab('colaboradores-lista', this); carregarTodosColaboradores();">
+    <i class="fas fa-users"></i> Todos Colaboradores
+</div>
     <div class="menu-group">RELATÓRIOS</div>
     <div class="nav-item" onclick="switchTab('relatorio', this)"><i class="fas fa-calendar-day"></i> Relatório Diário</div>
     <div class="nav-item" onclick="switchTab('mensal', this)"><i class="fas fa-chart-bar"></i> Relatório Mensal</div>
@@ -75,9 +81,11 @@
     <div class="nav-item" onclick="switchTab('dashboard', this); carregarDashboard();" style="color: var(--warning); font-weight:bold;">
         <i class="fas fa-tachometer-alt"></i> Dashboard Executivo
     </div>
-    <div class="menu-group">CONSULTAS</div>
-    <div class="nav-item" onclick="switchTab('consulta', this); carregarTabelas();"><i class="fas fa-list-ul"></i> Histórico Geral</div>
-    <div class="nav-item" onclick="switchTab('ficha', this)"><i class="fas fa-id-card"></i> Ficha Técnica</div>
+   <div class="menu-group">CONSULTAS</div>
+<div class="nav-item" onclick="switchTab('consulta', this); carregarTabelas();">
+    <i class="fas fa-list-ul"></i> Histórico Geral
+</div>
+<div class="nav-item" onclick="switchTab('ficha', this)"><i class="fas fa-id-card"></i> Ficha Técnica</div>
   </nav>
 
   <main class="main">
@@ -208,38 +216,105 @@
       <div class="card"><h2>Medidas Disciplinares</h2><table><thead><tr><th>Data</th><th>Mat</th><th>Tipo</th><th>Motivo</th><th>Dias</th></tr></thead><tbody id="corpoMedidas"></tbody></table></div>
       <div class="card"><h2>Histórico de Faltas</h2><table><thead><tr><th>Data</th><th>Mat</th><th>Tipo</th><th>Obs</th></tr></thead><tbody id="corpoFaltas"></tbody></table></div>
     </section>
-
-    <section id="tab-ficha" class="tab-content">
+<section id="tab-ficha" class="tab-content">
       <div class="card">
-         <div style="display:flex; justify-content:space-between;"><h2>Ficha Técnica Individual</h2><div><input type="text" id="busca-mat" placeholder="Matrícula..."><button class="btn-secondary" style="background:var(--primary);color:white" onclick="gerarFicha()">BUSCAR</button></div></div>
-         <div id="ficha-container" style="display:none; margin-top:20px;">
-            <div style="display:grid; grid-template-columns: 200px 1fr 200px; gap:20px;">
-                <div style="text-align:center"><img id="f-foto" style="width:150px; height:150px; border-radius:15px; border:3px solid #eee; object-fit:cover"><div id="f-tempo" class="badge bg-adv" style="margin-top:10px">--</div></div>
-                <div><label>Nome</label><h3 id="f-nome">--</h3><label>Cargo/Função</label><p id="f-cargo">--</p><label>Admissão</label><p id="f-adm">--</p></div>
-                <div style="text-align:center; background:#f8fafc; padding:20px; border-radius:12px;"><label>Absenteísmo</label><h2 id="f-abs">0%</h2><div id="f-meta-status"></div></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
+          <div style="display:flex; align-items:center; gap:15px;">
+            <h2 style="margin:0;">Ficha Técnica Individual</h2>
+            <div id="acoes-ficha" style="display:none; gap:10px;">
+              <button class="btn-secondary" onclick="exportarPDF()" style="background:#dc2626; color:white; margin:0; border:none; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-file-pdf"></i> SALVAR PDF
+              </button>
             </div>
-            
-            <div class="dash-row" style="margin-top:20px;">
-               <div class="card">
-                  <h3>Evolução Individual de Faltas</h3>
-                  <div style="height:200px; position:relative;">
-                      <canvas id="chartFicha"></canvas>
-                  </div>
-               </div>
-               <div class="card">
-                  <h3>Resumo Histórico</h3>
-                  <div id="f-total-faltas" style="margin-bottom:10px"></div>
-                  <div id="f-total-medidas"></div>
-               </div>
+          </div>
+          
+          <div style="display:flex; gap:5px;">
+            <input type="text" id="busca-mat" placeholder="Digite a matrícula..." style="width:150px;">
+            <button class="btn-secondary" style="background:var(--primary); color:white; margin:0" onclick="gerarFicha()">
+              <i class="fas fa-search"></i> BUSCAR
+            </button>
+          </div>
+        </div>
+
+        <div id="ficha-container" style="display:none; background: white; padding: 10px;">
+          <div style="display:grid; grid-template-columns: 180px 1fr 220px; gap:25px; align-items: start;">
+            <div style="text-align:center">
+              <img id="f-foto" src="https://via.placeholder.com/150" style="width:150px; height:150px; border-radius:15px; border:3px solid #f3f4f6; object-fit:cover; margin-bottom:10px;">
+              <div style="font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Tempo de Empresa</div>
+              <div id="f-tempo" class="badge bg-adv" style="display:block; padding:8px; font-size:12px; white-space: normal;">--</div>
             </div>
-         </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <label style="color:#64748b; font-size:11px;">NOME COMPLETO</label>
+                <h3 id="f-nome" style="font-size:20px; color:var(--sidebar-bg);">--</h3>
+              </div>
+              <div>
+                <label style="color:#64748b; font-size:11px;">SETOR / FUNÇÃO</label>
+                <p id="f-cargo" style="font-weight:500;">--</p>
+              </div>
+              <div>
+                <label style="color:#64748b; font-size:11px;">DATA DE ADMISSÃO</label>
+                <p id="f-adm">--</p>
+              </div>
+            </div>
+
+            <div style="text-align:center; background:#f8fafc; padding:20px; border-radius:12px; border: 1px solid #e2e8f0;">
+              <label style="color:#64748b; font-size:11px; font-weight: bold;">ABSENTEÍSMO (MÊS)</label>
+              <h2 id="f-abs" style="font-size:32px; margin:10px 0; color:var(--primary);">0%</h2>
+              <div id="f-meta-status"></div>
+            </div>
+          </div>
+
+          <div class="dash-row" style="margin-top:30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="card" style="margin:0; padding:15px; border-color: #f1f5f9;">
+              <h3 style="font-size:14px; margin-bottom:15px;"><i class="fas fa-chart-line" style="margin-right:8px;"></i>Evolução de Faltas (Ano Atual)</h3>
+              <div style="height:220px; position:relative;">
+                <canvas id="chartFicha"></canvas>
+              </div>
+            </div>
+            <div class="card" style="margin:0; padding:15px; border-color: #f1f5f9;">
+              <h3 style="font-size:14px; margin-bottom:15px;"><i class="fas fa-history" style="margin-right:8px;"></i>Resumo Histórico</h3>
+              <div id="f-total-faltas" style="padding: 10px; background: #fff5f5; border-radius: 8px; margin-bottom: 12px; font-size: 13px;"></div>
+              <div id="f-total-medidas" style="padding: 10px; background: #f8fafc; border-radius: 8px; font-size: 13px;"></div>
+            </div>
+          </div>
+        </div> 
       </div>
     </section>
 
+    <section id="tab-colaboradores-lista" class="tab-content">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h2>Lista Geral de Colaboradores</h2>
+          <button class="btn-secondary" onclick="carregarTodosColaboradores()" style="background:var(--primary); color:white">
+            <i class="fas fa-sync"></i> Atualizar
+          </button>
+        </div>
+        
+        <div style="overflow-x:auto;">
+          <table id="tabela-todos-colab">
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Matrícula</th>
+                <th>Nome</th>
+                <th>Setor</th>
+                <th>Função</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-todos-colab">
+              </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </main>
 
  <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyU6ZDpsqrnn4Qodl-jj7W9tijKb9aWGwS6taKtgxb4qbIezle0YUHiHudaC2-bmm1_oA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzHHfy1DuLuFsGrW9JX3_J-OMLztVBwPs8JihkiLKSKe6X8KpaX8DgKGWHAvj8NW0FIoQ/exec";
 
 let stream;
 let charts = {};
@@ -308,6 +383,72 @@ function toggleForm() {
     }
 }
 
+// BUSCAR E LISTAR COM BOTÕES DE AÇÃO
+// 1. BUSCAR E LISTAR COLABORADORES
+async function carregarTodosColaboradores() {
+    showLoad(true);
+    const lista = await api("listarColaboradores"); // Chama a função no Google Script
+    showLoad(false);
+
+    const corpo = document.getElementById('corpo-todos-colab');
+    corpo.innerHTML = ""; // Limpa a tabela antes de preencher
+
+    if (!lista || lista.length === 0) {
+        corpo.innerHTML = "<tr><td colspan='6' style='text-align:center'>Nenhum dado encontrado.</td></tr>";
+        return;
+    }
+
+    lista.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><img src="${c.foto || 'https://via.placeholder.com/40'}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;"></td>
+            <td><strong>${c.mat}</strong></td>
+            <td>${c.nome}</td>
+            <td>${c.setor}</td>
+            <td><span class="badge ${c.status === 'Ativo' ? 'bg-meta' : 'bg-fora'}">${c.status}</span></td>
+            <td>
+                <button class="btn-secondary" title="Editar" onclick='abrirEdicao(${JSON.stringify(c)})'>
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-secondary" title="Excluir" style="color:var(--danger)" onclick="excluirColab('${c.mat}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        corpo.appendChild(tr);
+    });
+}
+
+// 2. FUNÇÃO PARA EXCLUIR
+async function excluirColab(mat) {
+    if (!confirm(`Deseja realmente excluir o colaborador de matrícula ${mat}?`)) return;
+
+    showLoad(true);
+    const r = await api("excluirColaborador", { matricula: mat });
+    showLoad(false);
+
+    if (r && r.ok) {
+        alert("Colaborador excluído com sucesso!");
+        carregarTodosColaboradores(); // Recarrega a lista
+    } else {
+        alert("Erro ao excluir: " + (r.error || "Erro desconhecido"));
+    }
+}
+
+// 3. FUNÇÃO PARA ABRIR EDIÇÃO (MODAL)
+function abrirEdicao(colab) {
+    // Preenche os campos do modal (Certifique-se de ter o HTML do modal que enviei antes)
+    document.getElementById('edit-nome').value = colab.nome;
+    document.getElementById('edit-mat').value = colab.mat;
+    document.getElementById('edit-setor').value = colab.setor;
+    document.getElementById('edit-funcao').value = colab.funcao;
+    document.getElementById('edit-status').value = colab.status;
+    document.getElementById('edit-foto').value = colab.foto || "";
+    
+    document.getElementById('modal-editar').style.display = 'flex';
+}
+
+
 // -----------------------------
 // CÂMERA
 // -----------------------------
@@ -350,10 +491,7 @@ function previewFile(i) {
     r.readAsDataURL(i.files[0]);
 }
 
-// -----------------------------
-// CADASTRAR COLABORADOR
-// -----------------------------
-// -----------------------------
+
 // CADASTRAR COLABORADOR (VERSÃO COMPLETA COM LIMPEZA)
 // -----------------------------
 async function saveColab() {
@@ -447,56 +585,166 @@ async function salvarOcorrenciaGeral() {
 // -----------------------------
 // FUNÇÃO DE RENDERIZAR GRÁFICO
 // -----------------------------
-function renderChart(id, type, labels, dataPoints, colors) {
+function renderChart(id, type, labels, dataPoints, color) {
     const ctx = document.getElementById(id).getContext('2d');
-    if (charts[id]) charts[id].destroy();
+    if (charts[id]) charts[id].destroy(); // Destrói o gráfico anterior para não sobrepor
 
     charts[id] = new Chart(ctx, {
         type: type,
         data: {
-            labels,
+            labels: labels,
             datasets: [{
-                label: 'Dados',
+                label: 'Ocorrências no Mês',
                 data: dataPoints,
-                backgroundColor: colors,
-                borderColor: type === 'line' ? colors : 'transparent',
-                tension: 0.3
+                backgroundColor: type === 'line' ? 'rgba(37, 99, 235, 0.1)' : color,
+                borderColor: color,
+                borderWidth: 2,
+                fill: true, // Preenche a área abaixo da linha
+                tension: 0.4 // Deixa a linha curvada
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
     });
 }
 
 // -----------------------------
-// DASHBOARD
+// DASHBOARD EXECUTIVO (VERSÃO UNIFICADA)
 // -----------------------------
 async function carregarDashboard() {
     showLoad(true);
 
-    const mes = document.getElementById('dash-periodo').value || new Date().toISOString().slice(0,7);
+    // Se o campo de mês estiver vazio, define o mês atual como padrão
+    let campoMes = document.getElementById('dash-periodo').value || new Date().toISOString().slice(0,7);
+    document.getElementById('dash-periodo').value = campoMes;
 
-    const r = await api("dashboard", { mes });
-
+    const r = await api("dashboard", { mes: campoMes });
     showLoad(false);
 
     if(!r) return;
 
+    // 1. Atualização dos KPIs
     document.getElementById('d-ind-geral').innerText = r.kpi.geral + "%";
-    document.getElementById('d-meta-status').innerHTML = 
-        r.kpi.geral <= 1.92 
-        ? '<span class="badge bg-meta">DENTRO DA META</span>' 
-        : '<span class="badge bg-fora">ACIMA DA META</span>';
-
     document.getElementById('d-total-medidas').innerText = r.kpi.totalMedidas;
     document.getElementById('d-setor-critico').innerText = r.kpi.setorCritico;
+    
+    // Atualiza campo de projeção se ele existir no seu HTML
+    const campoProj = document.getElementById('d-projecao');
+    if(campoProj) campoProj.innerText = r.kpi.valorProjecao || "0";
 
-    document.querySelector('#tab-top5 tbody').innerHTML = 
-        r.top5.map(t => `<tr><td>${t.nome}</td><td>${t.setor}</td><td>${t.qtd}</td></tr>`).join('');
+    // 2. Atualização do Top 5 (Apenas colaboradores com faltas > 0)
+    const corpoTop5 = document.querySelector('#tab-top5 tbody');
+    corpoTop5.innerHTML = "";
 
+    if (r.top5 && r.top5.length > 0) {
+        r.top5.forEach(t => {
+            corpoTop5.innerHTML += `
+                <tr>
+                    <td>${t.nome}</td>
+                    <td>${t.setor}</td>
+                    <td style="color:var(--danger); font-weight:bold; text-align:center;">${t.qtd}</td>
+                </tr>`;
+        });
+    } else {
+        corpoTop5.innerHTML = '<tr><td colspan="3" style="text-align:center">Nenhuma falta no período.</td></tr>';
+    }
+
+    // 3. Renderização dos Gráficos
+    
+    // --- GRÁFICO DE TENDÊNCIA COM PROJEÇÃO ---
+    const labelsTendencia = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez", "ESTIMATIVA"];
+    const dadosReais = r.graficos.tendencia.values;
+    const mesAtual = r.graficos.tendencia.mesAtual; // Índice do mês (0-11)
+    const valorProj = r.graficos.tendencia.valorProjecao;
+
+    // Criamos as duas séries para o gráfico de linha
+    const serieReal = dadosReais.map((v, i) => i <= mesAtual ? v : null);
+    const serieProj = dadosReais.map((v, i) => i === mesAtual ? v : (i === mesAtual + 1 ? valorProj : null));
+
+    renderChartComplex("chartTendencia", labelsTendencia, [
+        {
+            label: 'Faltas Realizadas',
+            data: serieReal,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            fill: true,
+            tension: 0.4
+        },
+        {
+            label: 'Projeção',
+            data: serieProj,
+            borderColor: '#dc2626',
+            borderDash: [5, 5], 
+            fill: false,
+            tension: 0.4
+        }
+    ]);
+
+    // --- DEMAIS GRÁFICOS ---
     renderChart("chartTipo", "doughnut", r.graficos.tipo.labels, r.graficos.tipo.values, ["#3b82f6","#f59e0b","#ef4444"]);
     renderChart("chartSetor", "bar", r.graficos.setor.labels, r.graficos.setor.values, "#6366f1");
-    renderChart("chartTendencia", "line", r.graficos.tendencia.labels, r.graficos.tendencia.values, "#10b981");
 }
+
+// -----------------------------
+// FUNÇÕES DE RENDERIZAÇÃO (CONSOLIDADAS)
+// -----------------------------
+
+// Função para gráficos simples (Barra, Rosca)
+function renderChart(id, type, labels, data, colors) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    if (window.charts && window.charts[id]) window.charts[id].destroy();
+    if (!window.charts) window.charts = {};
+
+    window.charts[id] = new Chart(ctx, {
+        type: type,
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderColor: type === 'line' ? colors : 'transparent',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: type === 'doughnut', position: 'bottom' } },
+            scales: type !== 'doughnut' ? { y: { beginAtZero: true, ticks: { stepSize: 1 } } } : {}
+        }
+    });
+}
+
+// Função para gráfico de linha complexo (Tendência + Projeção)
+function renderChartComplex(id, labels, datasets) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (window.charts && window.charts[id]) window.charts[id].destroy();
+    if (!window.charts) window.charts = {};
+
+    window.charts[id] = new Chart(ctx, {
+        type: 'line',
+        data: { labels: labels, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'bottom' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
 
 
 // RELATÓRIO DIÁRIO (ACRESCENTADO LIMPEZA DE TABELA)
@@ -643,23 +891,52 @@ async function gerarRelatorioAnual() {
 async function carregarTabelas() {
     showLoad(true);
 
-    const d = await api("consultaGeral");
+    try {
+        const d = await api("consultaGeral");
+        showLoad(false);
 
-    showLoad(false);
+        const faltas = document.getElementById('corpoFaltas');
+        const medidas = document.getElementById('corpoMedidas');
 
-    const faltas = document.getElementById('corpoFaltas');
-    const medidas = document.getElementById('corpoMedidas');
+        // Limpa as tabelas antes de preencher
+        faltas.innerHTML = "";
+        medidas.innerHTML = "";
 
-    faltas.innerHTML = "";
-    medidas.innerHTML = "";
+        if (!d || d.length === 0) return;
 
-    d.forEach(r => {
-        if(r.cat === "Falta") {
-            faltas.innerHTML += `<tr><td>${r.data}</td><td>${r.matricula}</td><td>${r.tipo}</td><td>${r.obs}</td></tr>`;
-        } else {
-            medidas.innerHTML += `<tr><td>${r.data}</td><td>${r.matricula}</td><td>${r.tipo}</td><td>${r.obs}</td><td>${r.dias}</td></tr>`;
-        }
-    });
+        d.forEach(r => {
+            // --- LÓGICA DE FORMATAÇÃO DE DATA BR ---
+            let dataExibicao = r.data;
+            if (dataExibicao && String(dataExibicao).includes('-')) {
+                // Converte "2024-12-19" em "19/12/2024"
+                dataExibicao = dataExibicao.split('T')[0].split('-').reverse().join('/');
+            }
+
+            if (r.cat === "Falta") {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${dataExibicao}</td>
+                    <td>${r.matricula}</td>
+                    <td><span class="badge bg-fora">${r.tipo}</span></td>
+                    <td>${r.obs || "-"}</td>
+                `;
+                faltas.appendChild(tr);
+            } else {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${dataExibicao}</td>
+                    <td>${r.matricula}</td>
+                    <td><span class="badge bg-adv">${r.tipo}</span></td>
+                    <td>${r.obs || "-"}</td>
+                    <td>${r.dias || "0"}</td>
+                `;
+                medidas.appendChild(tr);
+            }
+        });
+    } catch (error) {
+        showLoad(false);
+        console.error("Erro ao carregar histórico:", error);
+    }
 }
 
 // -----------------------------
@@ -667,43 +944,123 @@ async function carregarTabelas() {
 // -----------------------------
 async function gerarFicha() {
     const mat = document.getElementById('busca-mat').value;
-    if(!mat) return;
+    if(!mat) return alert("Digite uma matrícula para buscar.");
 
     showLoad(true);
-
     const r = await api("ficha", { matricula: mat });
-
     showLoad(false);
 
-    if(!r.colaborador) {
-        alert("Não encontrado.");
+    if(!r || !r.colaborador) {
+        alert("Colaborador não encontrado.");
         return;
     }
 
+    // Exibe o container e os botões de ação
     document.getElementById('ficha-container').style.display = 'block';
+    document.getElementById('acoes-ficha').style.display = 'flex';
 
+    // --- CÁLCULO DE TEMPO DETALHADO ---
+    const calcularTempoDetallhado = (dataAdmStr) => {
+        if (!dataAdmStr) return "--";
+        const adm = new Date(dataAdmStr);
+        const hoje = new Date();
+        let anos = hoje.getFullYear() - adm.getFullYear();
+        let meses = hoje.getMonth() - adm.getMonth();
+        let dias = hoje.getDate() - adm.getDate();
+
+        if (dias < 0) {
+            meses--;
+            const ultimoDiaMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth(), 0).getDate();
+            dias += ultimoDiaMesAnterior;
+        }
+        if (meses < 0) {
+            anos--;
+            meses += 12;
+        }
+
+        let partes = [];
+        if (anos > 0) partes.push(`${anos} ${anos === 1 ? 'ano' : 'anos'}`);
+        if (meses > 0) partes.push(`${meses} ${meses === 1 ? 'mês' : 'meses'}`);
+        if (dias > 0) partes.push(`${dias} ${dias === 1 ? 'dia' : 'dias'}`);
+        return partes.join(", ") || "Admitido hoje";
+    };
+
+    // 1. Dados Básicos
     document.getElementById('f-foto').src = r.colaborador.foto || "https://via.placeholder.com/150";
     document.getElementById('f-nome').innerText = r.colaborador.nome;
     document.getElementById('f-cargo').innerText = r.colaborador.setor + " / " + r.colaborador.funcao;
-    document.getElementById('f-adm').innerText = r.colaborador.adm;
-    document.getElementById('f-tempo').innerText = r.tempoEmpresa;
+    document.getElementById('f-tempo').innerText = calcularTempoDetallhado(r.colaborador.adm);
 
+    // Data de Admissão Formatada
+    let dAdm = r.colaborador.adm;
+    document.getElementById('f-adm').innerText = dAdm && String(dAdm).includes('-') 
+        ? dAdm.split('T')[0].split('-').reverse().join('/') 
+        : dAdm;
+
+    // Absenteísmo
     document.getElementById('f-abs').innerText = r.absenteismo.toFixed(2) + "%";
-
-    document.getElementById('f-meta-status').innerHTML =
-        r.absenteismo <= 1.92
+    document.getElementById('f-meta-status').innerHTML = r.absenteismo <= 1.92
         ? '<span class="badge bg-meta">DENTRO DA META</span>'
         : '<span class="badge bg-fora">FORA DA META</span>';
 
-    document.getElementById('f-total-faltas').innerHTML = `Total Faltas: ${r.totalFaltas}`;
-    document.getElementById('f-total-medidas').innerHTML =
-        r.medidas.length
-        ? r.medidas.map(m => `• ${m.data} — ${m.tipo}`).join("<br>")
-        : "Nenhuma";
+    document.getElementById('f-total-faltas').innerHTML = `<strong>Total de Faltas:</strong> ${r.totalFaltas}`;
 
-    if(r.graficoEvolucao)
-        renderChart("chartFicha", "line", r.graficoEvolucao.labels, r.graficoEvolucao.values, "#2563eb");
+    // 2. Histórico de Medidas
+    const listaMedidas = document.getElementById('f-total-medidas');
+    if (r.medidas && r.medidas.length > 0) {
+        listaMedidas.innerHTML = "<strong>Medidas Disciplinares:</strong><br>" + r.medidas.map(m => {
+            let dataM = m.data && String(m.data).includes('-') ? m.data.split('T')[0].split('-').reverse().join('/') : m.data;
+            return `<small>• ${dataM} — ${m.tipo} (${m.obs || 'S/O'})</small>`;
+        }).join("<br>");
+    } else {
+        listaMedidas.innerHTML = "<strong>Medidas Disciplinares:</strong> Nenhuma registrada.";
+    }
+
+    // 3. GRÁFICO (Limpeza e Renderização)
+    const ctx = document.getElementById('chartFicha').getContext('2d');
+    if (charts['chartFicha']) { charts['chartFicha'].destroy(); }
+
+    if(r.graficoEvolucao && r.graficoEvolucao.values) {
+        charts['chartFicha'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+                datasets: [{
+                    label: 'Faltas',
+                    data: r.graficoEvolucao.values,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+
+    
 }
+
+function exportarPDF() {
+    const elemento = document.getElementById('ficha-container');
+    const nome = document.getElementById('f-nome').innerText;
+    const opt = {
+        margin: 10,
+        filename: `Ficha_${nome}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(elemento).save();
+}
+
+
+
+
 
 </script>
 
